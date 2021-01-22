@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width,height=device-height,inital-scale=1.0,maximum-scale=1.0,user-scalable=no;"/>
+    <title>计算器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        .row {
+            width: 100%;
+            display: flex;
+        }
+
+        body {
+            background: black;
+            padding: 0;
+            margin: 0;
+            /*font-family: PingFangSC-Regular, sans-serif;*/
+            /*font-family: PingFangSC-Ultralight, sans-serif;*/
+            /*font-family: PingFangSC-Light, sans-serif;*/
+            font-family: PingFangSC-Thin, sans-serif;
+            /*font-family: PingFangSC-Medium, sans-serif;*/
+            /*font-family: PingFangSC-Semibold, sans-serif;*/
+        }
+
+        .calculator {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            padding: 0 10px;
+        }
+
+        .calculator .display {
+            font-size: 85px;
+            color: white;
+            padding-top: 100px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+            height: 220px;
+            width: 100%;
+        }
+
+        .round-button {
+            font-family: PingFangSC-Regular, sans-serif;
+            border-radius: 100px;
+            padding: 20px;
+            width: calc((100vw - 60px) / 4);
+            height: calc((100vw - 60px) / 4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            margin: 5px;
+            transition: all .5s ease;
+        }
+
+        .button-default {
+            background: #323333;
+            color: white;
+        }
+
+        .button-default:active {
+            background: #737373;
+        }
+
+        .button-grey {
+            background: #A6A5A6;
+            color: black;
+        }
+
+        .button-grey:active {
+            background: #D9D8D8;
+        }
+
+        .button-orange {
+            background: #FF9900;
+            color: white;
+            font-size: 40px;
+            line-height: 30px;
+            align-items: baseline;
+        }
+
+        .button-orange:active {
+            background: #FFC586;
+        }
+
+        .button-orange.active {
+            background: white;
+            color: #FF9900;
+        }
+
+        .button-zero {
+            flex: 1;
+            justify-content: flex-start;
+        }
+    </style>
+</head>
+<body>
+<div class="calculator" id="calculator">
+    <div class="display" id="display">
+        <div>
+            0
+        </div>
+    </div>
+    <div class="buttons">
+        <div class="row">
+            <div class="round-button button-grey clear-button">
+                AC
+            </div>
+            <div class="round-button button-grey reverse-button">
+                +/-
+            </div>
+            <div class="round-button button-grey percent-button">
+                %
+            </div>
+            <div class="round-button button-orange operator-button">
+                ÷
+            </div>
+        </div>
+        <div class="row">
+            <div class="round-button button-default number-button">
+                7
+            </div>
+            <div class="round-button button-default number-button">
+                8
+            </div>
+            <div class="round-button button-default number-button">
+                9
+            </div>
+            <div class="round-button button-orange operator-button">
+                ×
+            </div>
+        </div>
+        <div class="row">
+            <div class="round-button button-default number-button">
+                4
+            </div>
+            <div class="round-button button-default number-button">
+                5
+            </div>
+            <div class="round-button button-default number-button">
+                6
+            </div>
+            <div class="round-button button-orange operator-button">
+                -
+            </div>
+        </div>
+        <div class="row">
+            <div class="round-button button-default number-button">
+                1
+            </div>
+            <div class="round-button button-default number-button">
+                2
+            </div>
+            <div class="round-button button-default number-button">
+                3
+            </div>
+            <div class="round-button button-orange operator-button">
+                +
+            </div>
+        </div>
+        <div class="row">
+            <div class="round-button button-default button-zero number-button">
+                0
+            </div>
+            <div class="round-button button-default number-button">
+                .
+            </div>
+            <div class="round-button button-orange operator-button">
+                =
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    let calculator = {
+        inputBuffer: [],
+        numberBuffer: [],
+        operatorBuffer: [],
+        init: function () {
+            // 注册按钮事件
+            let calculator = document.querySelector("#calculator");
+            let _this = this;
+            calculator.addEventListener('click', function (event) {
+                _this.inactiveAllOperatorButton();
+                if (event.target.className.indexOf("number-button") !== -1) {
+                    let input = event.target.innerHTML.trim();
+                    console.log("数字按钮" + input + "被按下");
+                    _this.processNumberInput(input);
+                    return;
+                } else if (event.target.className.indexOf("operator-button") !== -1) {
+                    console.log("运算符按钮" + event.target.innerHTML.trim() + "被按下");
+                    let input = event.target.innerHTML.trim();
+                    if (input !== '=') {
+                        _this.addClass(event.target, 'active');
+                    }
+                    _this.processOperatorButton(input);
+                    return;
+                } else if (event.target.className.indexOf('clear-button') !== -1) {
+                    _this.processClear();
+                    return;
+                } else if (event.target.className.indexOf('reverse-button') !== -1) {
+                    _this.processReserve();
+                    return;
+                } else if (event.target.className.indexOf('percent-button') !== -1) {
+                    _this.processPercentButton();
+                    return;
+                }
+            })
+        },
+        inactiveAllOperatorButton() {
+            let buttons = document.querySelectorAll('.operator-button');
+            for (let i = 0; i < buttons.length; i++) {
+                this.removeClass(buttons[i], 'active');
+            }
+        },
+        addClass(node, className) {
+            let classNames = node.className.split(' ');
+            let index = classNames.findIndex(item => {
+                return item === className;
+            });
+            if (index === -1) {
+                classNames.push(className);
+            }
+            node.className = classNames.join(' ');
+        },
+        removeClass(node, className) {
+            let classNames = node.className.split(' ');
+            let index = classNames.findIndex(item => {
+                return item === className;
+            });
+            if (index !== -1) {
+                classNames.splice(index, 1);
+            }
+            node.className = classNames.join(' ');
+        },
+        updateDisplay(result) {
+            let el_result = document.querySelector("#display>div");
+            el_result.innerHTML = result;
+            let fontSize = this.getFitFontSize(result);
+            document.querySelector("#display").style.fontSize = fontSize + 'px';
+        },
+        getFitFontSize(content) {
+            let display = document.querySelector('#display');
+            let size = 85;
+            let el_width = display.clientWidth;
+            while (this.getTextWidth(content, size + "px PingFangSC-Thin") >= el_width) {
+                size--;
+            }
+            return size;
+        },
+        getTextWidth(text, font) {
+            // re-use canvas object for better performance
+            let canvas = this.getTextWidth.canvas || (this.getTextWidth.canvas = document.createElement("canvas"));
+            let context = canvas.getContext("2d");
+            context.font = font;
+            let metrics = context.measureText(text);
+            return metrics.width;
+        },
+        getInputNumber() {
+            let number = this.inputBuffer.join('');
+            return Number(number);
+        },
+        processNumberInput(input) {
+            this.inputBuffer.push(input);
+            this.updateDisplay(this.inputBuffer.join(''));
+        },
+        processClear() {
+            this.inputBuffer = [];
+            this.numberBuffer = [];
+            this.operatorBuffer = [];
+            this.updateDisplay(0);
+        },
+        processReserve() {
+            if (this.inputBuffer.length) {
+                if (this.inputBuffer[0] === '-') {
+                    this.inputBuffer.splice(0, 1);
+                } else {
+                    this.inputBuffer.splice(0, 0, '-');
+                }
+                this.updateDisplay(this.getInputNumber());
+            } else {
+                this.inputBuffer.splice(0, 0, '-');
+                this.updateDisplay("-0");
+            }
+        },
+        processPercentButton() {
+            if (this.inputBuffer.length) {
+                let number = this.getInputNumber();
+                this.numberBuffer.push(number);
+                this.inputBuffer = [];
+            } else if (!this.numberBuffer.length) {
+                this.numberBuffer.push(0);
+            }
+            let result = this.numberBuffer.pop() / 100;
+            this.numberBuffer.push(result);
+            this.updateDisplay(result);
+        },
+        calculate(number1, number2, operator) {
+            if (operator === '+') {
+                return number1 + number2;
+            }
+            if (operator === '-') {
+                return number1 - number2;
+            }
+            if (operator === '×') {
+                return number1 * number2;
+            }
+            if (operator === '÷') {
+                return number1 / number2;
+            }
+        },
+        processOperatorButton(operator) {
+            if (this.operatorBuffer.length) {
+                if (!this.inputBuffer.length) {
+                    this.operatorBuffer.pop();
+                    this.operatorBuffer.push(operator);
+                    return;
+                }
+                let result = this.calculate(this.numberBuffer.pop(), this.getInputNumber(), this.operatorBuffer.pop());
+                this.numberBuffer.push(result);
+                this.inputBuffer = [];
+                if (operator !== '=') {
+                    this.operatorBuffer.push(operator);
+                }
+                this.updateDisplay(result);
+            } else {
+                if (operator !== '=') {
+                    this.operatorBuffer.push(operator);
+                }
+                if (this.inputBuffer.length) {
+                    this.numberBuffer.push(this.getInputNumber());
+                    this.inputBuffer = [];
+                }
+            }
+        }
+    };
+
+    calculator.init();
+</script>
+</html>
